@@ -2,28 +2,22 @@ import { CanvasLike } from "#canvas";
 import { BlendMode, FakeImage } from "../types";
 import { Affine2D } from "../util/Affine2D";
 import { GLImage } from "./GLImage";
-import vertexShader1 from "./shaders/1.0/vertex.vert";
-import fragmentShader1 from './shaders/1.0/fragment.frag';
-import vertexShader2 from "./shaders/2.0/vertex.vert";
-import fragmentShader2 from './shaders/2.0/fragment.frag';
-import { orthographic, isPowerOf2 } from "../util/util";
+import vertexShader from "./shaders/2.0/vertex.vert";
+import fragmentShader from './shaders/2.0/fragment.frag';
+import { orthographic } from "../util/util";
 
-type WebGLVer = 1 | 2;
 
 export class GLGraphics extends Affine2D {
-	private readonly gl: WebGLRenderingContext | WebGL2RenderingContext;
-	private readonly positionArr = new Float32Array(8);
-	private readonly texCoordArr = new Float32Array(8);
-	private readonly bgArr = new Float32Array(8);
-	private readonly ver: WebGLVer;
+	private readonly gl: WebGL2RenderingContext;
+	private readonly imgArr = new Float32Array(16);
+	private readonly bgArr = new Float32Array(16);
 	private readonly program: WebGLProgram;
 	private readonly a_position: GLint;
-	private readonly a_positionBufImg: WebGLBuffer;
-	private readonly a_positionBufBG?: WebGLBuffer;
+	private readonly imgBuffer: WebGLBuffer;
+	private readonly bgBuffer: WebGLBuffer;
 	private readonly a_texCoord: GLint;
-	private readonly a_texCoordBuf: WebGLBuffer;
-	private readonly vaoImg?: WebGLVertexArrayObject;
-	private readonly vaoBG?: WebGLVertexArrayObject;
+	private readonly vaoImg: WebGLVertexArrayObject;
+	private readonly vaoBG: WebGLVertexArrayObject;
 	private readonly u_mode: WebGLUniformLocation;
 	private readonly u_mat: WebGLUniformLocation;
 	private readonly u_para: WebGLUniformLocation;
@@ -48,25 +42,17 @@ export class GLGraphics extends Affine2D {
 			...options,
 		};
 
-		const gl2 = canvas.getContext("webgl2", opts) as WebGL2RenderingContext;
-		if (gl2) {
-			this.ver = 2;
-			this.gl = gl2;
-		} else {
-			console.warn('WebGL 2 is not supported. Fallback to WebGL 1');
-			const gl1 = canvas.getContext("webgl", opts) as WebGLRenderingContext;
-			if (!gl1)
-				throw new Error("WebGL is not supported in your browser!");
-			this.ver = 1;
-			this.gl = gl1;
-		}
+		this.gl = canvas.getContext("webgl2", opts) as WebGL2RenderingContext;
+
+		if (!this.gl)
+			throw new Error("WebGL is not supported in your browser!");
 
 		this.program = this.gl.createProgram()!;
 		if (!this.program)
 			throw new Error('Failed to create WebGL program.');
 
-		this.shader(this.gl.VERTEX_SHADER, gl2 ? vertexShader2 : vertexShader1);
-		this.shader(this.gl.FRAGMENT_SHADER, gl2 ? fragmentShader2 : fragmentShader1);
+		this.shader(this.gl.VERTEX_SHADER, vertexShader);
+		this.shader(this.gl.FRAGMENT_SHADER, fragmentShader);
 		this.gl.linkProgram(this.program);
 		this.gl.useProgram(this.program);
 
@@ -78,30 +64,35 @@ export class GLGraphics extends Affine2D {
 		this.u_c1 = this.gl.getUniformLocation(this.program, 'u_c1')!;
 		this.u_c2 = this.gl.getUniformLocation(this.program, 'u_c2')!;
 		this.u_height = this.gl.getUniformLocation(this.program, 'u_height')!;
-		
-		if (gl2) {
-			this.vaoImg = gl2.createVertexArray()!;
-			gl2.bindVertexArray(this.vaoImg);
-		}
 
-		this.a_positionBufImg = this.gl.createBuffer()!;
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_positionBufImg);
-		this.gl.vertexAttribPointer(this.a_position, 2, this.gl.FLOAT, false, 0, 0);
+		const stride = 4 * Float32Array.BYTES_PER_ELEMENT;
+		const texCoordOffset = 2 * Float32Array.BYTES_PER_ELEMENT;
+
+		this.vaoImg = this.gl.createVertexArray();
+		this.gl.bindVertexArray(this.vaoImg);
+
+		this.imgBuffer = this.gl.createBuffer()!;
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.imgBuffer);
+
+		this.gl.vertexAttribPointer(this.a_position, 2, this.gl.FLOAT, false, stride, 0);
 		this.gl.enableVertexAttribArray(this.a_position);
 
-		this.a_texCoordBuf = this.gl.createBuffer()!;
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_texCoordBuf);
-		this.gl.vertexAttribPointer(this.a_texCoord, 2, this.gl.FLOAT, false, 0, 0);
+		this.gl.vertexAttribPointer(this.a_texCoord, 2, this.gl.FLOAT, false, stride, texCoordOffset);
 		this.gl.enableVertexAttribArray(this.a_texCoord);
 
-		if (gl2) {
-			this.vaoBG = gl2.createVertexArray()!;
-			gl2.bindVertexArray(this.vaoBG);
-			this.a_positionBufBG = this.gl.createBuffer()!;
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_positionBufBG)!;
-			this.gl.vertexAttribPointer(this.a_position, 2, this.gl.FLOAT, false, 0, 0);
-			this.gl.enableVertexAttribArray(this.a_position);
-		}
+
+		this.vaoBG = this.gl.createVertexArray()!;
+		this.gl.bindVertexArray(this.vaoBG);
+
+		this.bgBuffer = this.gl.createBuffer()!;
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.bgBuffer);
+
+		this.gl.vertexAttribPointer(this.a_position, 2, this.gl.FLOAT, false, stride, 0);
+		this.gl.enableVertexAttribArray(this.a_position);
+
+		this.gl.vertexAttribPointer(this.a_texCoord, 2, this.gl.FLOAT, false, stride, texCoordOffset);
+		this.gl.enableVertexAttribArray(this.a_texCoord);
+
 
 		this.gl.clearColor(0, 0, 0, 0);
 
@@ -122,15 +113,10 @@ export class GLGraphics extends Affine2D {
 
 	override drawImage(bimg: GLImage, x: number, y: number, w: number, h: number): void {
 		const img = bimg as GLImage;
-		this.texCoordArr[0] = this.texCoordArr[2] = img.x;
-		this.texCoordArr[1] = this.texCoordArr[5] = img.y;
-		this.texCoordArr[4] = this.texCoordArr[6] = img.x + img.w;
-		this.texCoordArr[3] = this.texCoordArr[7] = img.y + img.h;
-
-		for (let i = 0;i < 8;i += 2) {
-			this.texCoordArr[i] /= img.bitmap.width;
-			this.texCoordArr[i + 1] /= img.bitmap.height;
-		}
+		this.imgArr[2] = this.imgArr[6] = img.x / img.bitmap.width;
+		this.imgArr[3] = this.imgArr[11] = img.y / img.bitmap.height;
+		this.imgArr[10] = this.imgArr[14] = (img.x + img.w) / img.bitmap.width;
+		this.imgArr[7] = this.imgArr[15] = (img.y + img.h) / img.bitmap.height;
 
 		const p = new DOMPoint();
 
@@ -138,29 +124,25 @@ export class GLGraphics extends Affine2D {
 		const yh = y + h;
 
 		this.transformPoint(p, x, y);
-		this.positionArr[0] = p.x;
-		this.positionArr[1] = p.y;
+		this.imgArr[0] = p.x;
+		this.imgArr[1] = p.y;
 
 		this.transformPoint(p, x, yh);
-		this.positionArr[2] = p.x;
-		this.positionArr[3] = p.y;
+		this.imgArr[4] = p.x;
+		this.imgArr[5] = p.y;
 
 		this.transformPoint(p, xw, y);
-		this.positionArr[4] = p.x;
-		this.positionArr[5] = p.y;
+		this.imgArr[8] = p.x;
+		this.imgArr[9] = p.y;
 
 		this.transformPoint(p, xw, yh);
-		this.positionArr[6] = p.x;
-		this.positionArr[7] = p.y;
+		this.imgArr[12] = p.x;
+		this.imgArr[13] = p.y;
 
-		if (this.ver === 2)
-			(this.gl as WebGL2RenderingContext).bindVertexArray(this.vaoImg!);
+		this.gl.bindVertexArray(this.vaoImg);
 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_positionBufImg);
-		this.gl.bufferData(this.gl.ARRAY_BUFFER, this.positionArr, this.gl.STATIC_DRAW);
-
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_texCoordBuf);
-		this.gl.bufferData(this.gl.ARRAY_BUFFER, this.texCoordArr, this.gl.STATIC_DRAW);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.imgBuffer);
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, this.imgArr, this.gl.STATIC_DRAW);
 
 		this.gl.bindTexture(this.gl.TEXTURE_2D, img.tex);
 
@@ -259,20 +241,10 @@ export class GLGraphics extends Affine2D {
 		this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
 		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, bitmap);
 
-		if (this.ver === 2) {
-			this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-			this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-			this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
-			this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
-		} else {
-			if (isPowerOf2(bitmap.width) && isPowerOf2(bitmap.height)) {
-				this.gl.generateMipmap(this.gl.TEXTURE_2D);
-			} else {
-				this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-				this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-				this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-			}
-		}
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
 
 		return new GLImage(bitmap, tex);
 	}
@@ -284,17 +256,15 @@ export class GLGraphics extends Affine2D {
 	}
 
 	override resize(width: number, height: number) {
-		this.bgArr[4] = this.bgArr[6] = width;
-		this.bgArr[3] = this.bgArr[7] = height;
+		this.bgArr[8] = this.bgArr[12] = width;
+		this.bgArr[5] = this.bgArr[13] = height;
 
 		this.gl.viewport(0, 0, width, height);
 		this.gl.uniform1f(this.u_height, height);
 		this.gl.uniformMatrix4fv(this.u_mat, false, orthographic(0, width, height, 0, -1, 1));
 
-		if (this.ver === 2) {
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_positionBufBG!);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, this.bgArr, this.gl.STATIC_DRAW);
-		}
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.bgBuffer);
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, this.bgArr, this.gl.STATIC_DRAW);
 
 		super.resize(width, height);
 		this.drawBG();
@@ -307,13 +277,7 @@ export class GLGraphics extends Affine2D {
 
 	override drawBG() {
 		this.checkMode(0);
-		if (this.ver === 2) {
-			(this.gl as WebGL2RenderingContext).bindVertexArray(this.vaoBG!);
-		} else {
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.a_positionBufImg);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, this.bgArr, this.gl.STATIC_DRAW);
-		}
-
+		this.gl.bindVertexArray(this.vaoBG);
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 	}
 
