@@ -1,0 +1,31 @@
+{
+  "name": "battle-cats-animation-typescript",
+  "dependencies": {
+    "@tsconfig/recommended": "^1.0.8",
+    "@webgpu/types": "^0.1.54",
+    "canvas": "^3.1.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "gifenc": "^1.0.3",
+    "h264-mp4-encoder": "^1.0.12",
+    "mp4-muxer": "^5.2.0",
+    "mp4-wasm": "^1.0.6",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "webpack-cli": "^6.0.1",
+    "raw-loader": "^4.0.2",
+    "ts-loader": "^9.5.2",
+    "tsx": "^4.19.3"
+  },
+  "scripts": {
+    "build": "npx webpack",
+    "deploy": "npx webpack --mode=production",
+    "node": "tsx --tsconfig tsconfig.node.json src/node/main.ts"
+  },
+  "type": "module",
+  "imports": {
+    "#canvas": {
+      "default": "./src/canvas-browser.ts"
+    }
+  }
+}

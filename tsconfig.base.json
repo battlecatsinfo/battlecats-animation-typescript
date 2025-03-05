@@ -1,0 +1,9 @@
+{
+	"compilerOptions": {
+		"outDir": "./dist/",
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"strictPropertyInitialization": false,
+		"skipLibCheck": true
+	}
+}

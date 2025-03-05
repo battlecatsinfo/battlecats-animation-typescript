@@ -1,0 +1,17 @@
+{
+	"extends": ["./tsconfig.base.json"],
+	"compilerOptions": {
+		"target": "ES2017",
+		"module": "es2022",
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"allowUmdGlobalAccess": true,
+		"moduleResolution": "bundler",
+		"typeRoots": [ "./node_modules/@webgpu/types" ],
+		"sourceMap": true,
+		"paths": {
+			"#canvas": ["./src/canvas-browser.ts"]
+		},
+		"allowJs": true
+	},
+	"exclude": [ "./src/node", "./src/canvas-node.ts" ]
+}
