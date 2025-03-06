@@ -546,7 +546,7 @@ export class AnimPage {
 			}
 		});
 
-		document.addEventListener('click', function () {
+		document.addEventListener('click', function (event: MouseEvent) {
 			self.mouseDown = false;
 
 			if (self.show_menu) {
@@ -561,7 +561,8 @@ export class AnimPage {
 			if (self.dragging)
 				return;
 
-			self.handlePause();
+			if (event.target === self.canvas)
+				self.handlePause();
 		});
 
 		window.addEventListener("wheel", function (event) {
