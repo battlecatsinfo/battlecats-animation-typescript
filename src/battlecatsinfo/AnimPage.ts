@@ -22,6 +22,9 @@ const engineMap: { [key: string]: CanvasContructor } = {
 	'WebGPU': WebGPUGraphics,
 };
 
+const dpr = self.devicePixelRatio || 1; // may run in web workers
+const minMoveInterval = dpr * 5;
+
 export class AnimPage {
 	private readonly g: FakeGraphics;
 	private readonly loader: AnimLoader;
@@ -57,6 +60,7 @@ export class AnimPage {
 	private cur_form = 0;
 	private mouseDown = false;
 	private moving = false;
+	private dragging = false;
 	private speedFactor = 1;
 	private touchState = TouchState.None;
 
@@ -408,6 +412,7 @@ export class AnimPage {
 			if (!self.loaded)
 				return;
 
+			self.dragging = false;
 			self.moving = self.mouseDown = true;
 			self.targetX = self.initialX = event.clientX;
 			self.targetY = self.initialY = event.clientY;
@@ -424,6 +429,7 @@ export class AnimPage {
 		this.canvas.addEventListener('mousemove', function (event: MouseEvent) {
 			event.preventDefault();
 			event.stopPropagation();
+			self.dragging = true;
 			if (!self.loaded)
 				return;
 
@@ -454,6 +460,7 @@ export class AnimPage {
 
 		this.canvas.addEventListener('touchstart', function (event: TouchEvent) {
 			event.preventDefault();
+			self.dragging = false;
 
 			if (!self.loaded)
 				return;
@@ -486,6 +493,7 @@ export class AnimPage {
 
 		this.canvas.addEventListener('touchmove', function (event: TouchEvent) {
 			event.preventDefault();
+			self.dragging = true;
 
 			if (!self.loaded)
 				return;
@@ -506,6 +514,7 @@ export class AnimPage {
 					const { clientX, clientY } = event.changedTouches[0];
 					self.targetX = clientX;
 					self.targetY = clientY;
+					self.dragging = Math.hypot(self.targetX - self.initialX, self.targetY - self.initialY) > minMoveInterval;
 					break;
 
 				default:
@@ -516,6 +525,11 @@ export class AnimPage {
 		this.canvas.addEventListener('touchend', function (event: TouchEvent) {
 			event.preventDefault();
 			self.mouseDown = false;
+
+			if (!self.dragging) {
+				self.handlePause();
+			}
+
 			if (self.touchState === TouchState.Moving) {
 				const { clientX, clientY } = event.changedTouches[0];
 				self.targetX = clientX;
@@ -540,6 +554,14 @@ export class AnimPage {
 				self.show_menu = undefined;
 				return;
 			}
+
+			if (!self.loaded)
+				return;
+
+			if (self.dragging)
+				return;
+
+			self.handlePause();
 		});
 
 		window.addEventListener("wheel", function (event) {
@@ -748,7 +770,6 @@ export class AnimPage {
 	}
 
 	private setupSize() {
-		const dpr = window.devicePixelRatio || 1;
 		const min = Math.min(this.canvas.clientWidth * dpr, this.canvas.clientHeight * dpr);
 		const initzoomEl = Math.min(1, Math.max(0.5, min / 500));
 
@@ -795,7 +816,7 @@ export class AnimPage {
 		if (Math.abs(offsetX) > 0.2 && Math.abs(offsetY) > 0.2) {
 			const sx = offsetX * elapsed / 160;
 			const sy = offsetY * elapsed / 160;
-			this.g.translate(sx, sy);
+			this.g.translate(sx * dpr, sy * dpr);
 			this.initialX += sx;
 			this.initialY += sy;
 		} else {
