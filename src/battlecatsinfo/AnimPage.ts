@@ -22,6 +22,7 @@ const engineMap: { [key: string]: CanvasContructor } = {
 	'WebGPU': WebGPUGraphics,
 };
 
+const MIN_SPEED = 0.1; // 0.1x
 const dpr = self.devicePixelRatio || 1; // may run in web workers
 const minMoveInterval = dpr * 5;
 
@@ -322,7 +323,10 @@ export class AnimPage {
 		};
 
 		this.speedEl.addEventListener('input', function () {
-			self.speedFactor = parseFloat(self.speedEl.value);
+			const val = parseFloat(self.speedEl.value);
+
+			if (Number.isFinite(val) && val >= MIN_SPEED)
+				self.speedFactor = val;
 		});
 
 		document.getElementById('settings')!.addEventListener('click', handleSetting);
