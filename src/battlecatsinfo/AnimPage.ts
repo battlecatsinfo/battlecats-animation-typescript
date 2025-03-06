@@ -154,7 +154,7 @@ export class AnimPage {
 		this.loader.forms[this.cur_form].drawFrameNoUpdate();
 	}
 
-	private handlepauseEl() {
+	private handlePause() {
 		if (!this.loaded)
 			return;
 
@@ -183,7 +183,7 @@ export class AnimPage {
 	private addListeners() {
 		const self = this;
 
-		this.pauseEl.addEventListener('click', this.handlepauseEl.bind(this));
+		this.pauseEl.addEventListener('click', this.handlePause.bind(this));
 
 		this.nextFrameEl.addEventListener('click', function () {
 			self.nextFrame(1);
@@ -358,7 +358,7 @@ export class AnimPage {
 			switch (event.key) {
 				case 'p':
 				case ' ':
-					self.handlepauseEl();
+					self.handlePause();
 					break;
 
 				case 'd':
