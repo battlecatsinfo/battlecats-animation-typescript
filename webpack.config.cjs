@@ -57,6 +57,13 @@ const config = {
 		},
 		extensions: ['.ts'],
 	},
+	experiments: {
+		outputModule: true,
+	},
+	externalsType: 'module',
+	externals: {
+		'./common.mjs': './common.mjs',
+	},
 };
 
 module.exports = (env, argv) => {

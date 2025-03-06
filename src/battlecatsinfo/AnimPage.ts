@@ -2,7 +2,7 @@ import { CanvasLike } from "#canvas";
 import { GLGraphics } from "../webgl/GLGraphics";
 import { Canvas2DGraphics } from "../canvas2d/Canvas2DGraphics";
 import { WebGPUGraphics } from "../webgpu/WebGPUGraphics";
-import { AnimLoader } from "./AnimLoader";
+import { AnimLoader, eggs } from "./AnimLoader";
 import { parseHexColor, toIntFast } from "../util/util";
 import { FakeGraphics } from "../types";
 import { msToFrame, frameToMs } from "../config";
@@ -732,11 +732,12 @@ export class AnimPage {
 
 			if (v >= 0) {
 				let i = 0;
+				const egg = eggs[v] ?? [];
 				for (const e of this.iconsEl.children) {
 					const img = e as HTMLImageElement;
 					if (i < nForms) {
 						img.hidden = false;
-						img.src = `/img/u/${v}/${i}.png`;
+						img.src = i < egg.length ? `/img/s/${egg[i]}/0.png` : `/img/u/${v}/${i}.png`;
 					} else {
 						img.hidden = true;
 					}

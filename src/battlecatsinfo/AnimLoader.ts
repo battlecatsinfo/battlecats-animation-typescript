@@ -5,6 +5,11 @@ import { FakeGraphics } from "../types";
 import { AnimUnit } from "../AnimUnit";
 import { StrLineStream } from "../StrLineStream";
 
+// @ts-ignore
+import { loadScheme } from './common.mjs';
+
+export const { eggs } = await loadScheme('units', [ 'eggs' ]);
+
 export class AnimLoader {
 	constructor(public readonly g: FakeGraphics, public forms: AnimUnit[] = []) {
 
@@ -53,21 +58,53 @@ export class AnimLoader {
 	async loadUnit(id: number) {
 		const res = await AnimLoader.fetch(`/img/u/${id}/a`);
 		const datum = await res.json() as string[][];
-		const images = await Promise.all(datum.map(async (_, i) => {
-			const res = await AnimLoader.fetch(`/img/u/${id}/c${i}.png`);
-			const blob = await res.blob();
-			return await this.g.buildImg(blob);
-		}));
 
-		this.forms = datum.map((data, i) =>
-			new AnimUnit(
-				this.g,
-				ImgCut.load(new StrLineStream(data[0])),
-				images[i],
-				MaModel.load(new StrLineStream(data[1])),
-				data.slice(2).map((x: string) => MaAnim.load(new StrLineStream(x)))
-			)
-		);
+		const egg = eggs[id];
+
+		if (egg !== undefined) {
+			const promises = egg.map(async (eggId: number) => {
+				const res1 = await AnimLoader.fetch(`/img/s/${eggId}/a`);
+				const a = await res1.json();
+				const res2 = await AnimLoader.fetch(`/img/s/${eggId}/c.png`);
+				const blob = await res2.blob();
+				return [await this.g.buildImg(blob), a];
+			});
+
+			if (datum.length) {
+				promises.push(...datum.map(async (_, i: number) => {
+					const res = await AnimLoader.fetch(`/img/u/${id}/c${i + 2}.png`);
+					const blob = await res.blob();
+					return [await this.g.buildImg(blob), datum[i]];
+				}));
+			}
+			const eggData = await Promise.all(promises);
+			this.forms = [];
+			for (const [img, data] of eggData) {
+				this.forms.push(new AnimUnit(
+					this.g,
+					ImgCut.load(new StrLineStream(data[0])),
+					img,
+					MaModel.load(new StrLineStream(data[1])),
+					data.slice(2).map((x: string) => MaAnim.load(new StrLineStream(x)))
+				));
+			}
+		} else {
+			const images = await Promise.all(datum.map(async (_, i) => {
+				const res = await AnimLoader.fetch(`/img/u/${id}/c${i}.png`);
+				const blob = await res.blob();
+				return await this.g.buildImg(blob);
+			}));
+	
+			this.forms = datum.map((data, i) =>
+				new AnimUnit(
+					this.g,
+					ImgCut.load(new StrLineStream(data[0])),
+					images[i],
+					MaModel.load(new StrLineStream(data[1])),
+					data.slice(2).map((x: string) => MaAnim.load(new StrLineStream(x)))
+				)
+			);
+		}
 	}
 
 	setSize(siz: number) {
