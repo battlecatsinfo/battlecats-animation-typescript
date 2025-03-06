@@ -524,6 +524,12 @@ export class AnimPage {
 
 		this.canvas.addEventListener('touchend', function (event: TouchEvent) {
 			event.preventDefault();
+
+			if (self.show_menu) {
+				self.show_menu.hidden = true;
+				self.show_menu = undefined;
+			}
+
 			self.mouseDown = false;
 
 			if (!self.dragging) {
