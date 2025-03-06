@@ -2,9 +2,8 @@ const path = require('path');
 const webpack = require("webpack");
 const CopyPlugin = require("copy-webpack-plugin");
 
-module.exports = {
+const config = {
 	entry: './src/battlecatsinfo/main.ts',
-	mode: 'development',
 	devtool: 'source-map',
 	module: {
 		rules: [
@@ -58,4 +57,18 @@ module.exports = {
 		},
 		extensions: ['.ts'],
 	},
+};
+
+module.exports = (env, argv) => {
+	config.mode = argv.mode;
+
+	if (argv.mode === 'production') {
+		config.plugins.push(
+			new webpack.DefinePlugin({
+				"Float32Array.BYTES_PER_ELEMENT": 4,
+			})
+		);
+	}
+
+	return config;
 };

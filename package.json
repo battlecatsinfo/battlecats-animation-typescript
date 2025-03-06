@@ -18,7 +18,7 @@
     "tsx": "^4.19.3"
   },
   "scripts": {
-    "build": "npx webpack",
+    "build": "npx webpack --mode=development",
     "deploy": "npx webpack --mode=production",
     "node": "tsx --tsconfig tsconfig.node.json src/node/main.ts"
   },
