@@ -254,7 +254,7 @@ export class AnimPage {
 					return;
 				}
 
-				if (window.Worker) {
+				if (window.Worker && window.OffscreenCanvas) {
 					const url = new URL('anim.min.js', document.baseURI || location.href); /*import.meta.url*/
 					url.searchParams.set('id', self.unitIdEl.value);
 					url.searchParams.set('cmd', cmd);

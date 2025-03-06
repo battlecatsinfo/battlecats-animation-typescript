@@ -9,6 +9,7 @@ import { GPUImage } from "../webgpu/GPUImage";
 import { WebGPUGraphics } from "../webgpu/WebGPUGraphics";
 import { toIntFast } from "../util/util";
 import { download } from "../util/download";
+import { checkOffscreenCanvas } from "./OffscreenCanvas";
 
 import loadMP4Module, { isWebCodecsSupported } from "mp4-wasm";
 import * as mp4Muxer from 'mp4-muxer';
@@ -29,6 +30,7 @@ export class ExportGraphics extends FakeGraphics {
 	private readonly inWebWorker: boolean;
 
 	constructor(Cls: new (canvas: CanvasLike, options?: object) => FakeGraphics, inWebWorker: boolean) {
+		checkOffscreenCanvas();
 		const canvas = new OffscreenCanvas(1, 1);
 		super(canvas);
 		this.driver = new Cls(canvas, { willReadFrequently: true });
