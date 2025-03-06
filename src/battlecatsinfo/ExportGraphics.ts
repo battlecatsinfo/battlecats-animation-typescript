@@ -213,6 +213,9 @@ export class ExportGraphics extends FakeGraphics {
 	}
 
 	exportMp4(unit: AnimUnit, onProgress: (val: number) => void, is60fps = false) {
+		// Web Worker has no global window
+		if (typeof self.window === 'undefined')
+			self.window = self;
 		if (isWebCodecsSupported()) {
 			/*
 			 * mp4-muxer dose not work well in Firefox right now.
