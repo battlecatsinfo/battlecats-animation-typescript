@@ -621,8 +621,8 @@ export class AnimPage {
 			bar.parentElement!.classList.add('completed');
 			setTimeout(() => {
 				bar.parentElement!.remove();
-			}, 2000);
-		}, 5000);		
+			}, 1000);
+		}, 2500);
 	}
 
 	private async executeCommand(options: {
