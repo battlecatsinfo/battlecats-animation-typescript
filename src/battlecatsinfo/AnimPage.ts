@@ -57,13 +57,13 @@ export class AnimPage {
 
 	private loaded = false;
 	private stop = false;
-	private cur_form = 0;
 	private mouseDown = false;
 	private moving = false;
 	private dragging = false;
 	private speedFactor = 1;
 	private touchState = TouchState.None;
 
+	private cur_form: number;
 	private frame: number;
 	private length: number;
 	private zeroTime: number;
@@ -755,6 +755,7 @@ export class AnimPage {
 			this.loader.setSize(this.siz);
 			this.rangeEl.value = '0';
 			this.loadingEl.hidden = true;
+			this.cur_form = 0;
 			this.loaded = true;
 			this.startAnimate();
 		}).catch(err => {
