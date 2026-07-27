@@ -53,6 +53,7 @@ export class AnimPage {
 	private readonly progressCtnEl: HTMLDivElement;
 	private readonly zoomEl: HTMLInputElement;
 	private readonly speedEl: HTMLInputElement;
+	private readonly fpsEl: HTMLSpanElement;
 
 	private show_menu?: HTMLUListElement;
 
@@ -63,6 +64,7 @@ export class AnimPage {
 	private dragging = false;
 	private speedFactor = 1;
 	private touchState = TouchState.None;
+	private stopped = true;
 
 	private cur_form: number;
 	private frame: number;
@@ -76,6 +78,8 @@ export class AnimPage {
 	private initialDis: number;
 	private siz: number;
 	private initScale: number;
+	private lastFpsTime: number = 0;
+	private frameCount: number = 0;
 
 	constructor() {
 		const url = new URL(location.href);
@@ -136,6 +140,7 @@ export class AnimPage {
 		this.color1El = document.getElementById('color1') as HTMLInputElement;
 		this.color2El = document.getElementById('color2') as HTMLInputElement;
 		this.speedEl = document.getElementById('speed') as HTMLInputElement;
+		this.fpsEl = document.getElementById('fps') as HTMLSpanElement;
 
 		this.g = this.selectEngine();
 		this.loader = new AnimLoader(this.g);
@@ -167,7 +172,7 @@ export class AnimPage {
 			this.stop = false;
 			this.setPlayIcon();
 			this.zeroTime = (document.timeline.currentTime as number) - frameToMs(this.frame / this.speedFactor);
-			requestAnimationFrame(this.animateLoopF);
+			this.startAnimateLoop();
 		} else {
 			this.stop = true;
 			this.setPlayIcon();
@@ -819,7 +824,16 @@ export class AnimPage {
 
 		this.zeroTime = document.timeline.currentTime as number;
 
-		requestAnimationFrame(this.animateLoopF);
+		this.startAnimateLoop();
+	}
+
+	private startAnimateLoop() {
+		if (this.stopped) {
+			this.frameCount = 0;
+			this.stopped = false;
+			this.lastFpsTime = performance.now();
+			requestAnimationFrame(this.animateLoopF);
+		}
 	}
 
 	private move(elapsed: number) {
@@ -851,8 +865,11 @@ export class AnimPage {
 	}
 
 	private animateLoop(timestamp: DOMHighResTimeStamp) {
-		if (this.stop)
+		if (this.stop) {
+			this.stopped = true;
+			this.fpsEl.innerText = '(Paused)';
 			return;
+		}
 
 		requestAnimationFrame(this.animateLoopF);
 
@@ -864,5 +881,14 @@ export class AnimPage {
 		this.frame = msToFrame(this.speedFactor * (timestamp - this.zeroTime));
 		this.loader.forms[this.cur_form].drawFrame(this.frame);
 		this.rangeEl.value = toIntFast(this.frame).toString();
+
+		this.frameCount++;
+
+		if (timestamp - this.lastFpsTime >= 1000) {
+			const fps = Math.round((this.frameCount * 1000) / (timestamp - this.lastFpsTime));
+			this.fpsEl.innerText = `FPS: ${fps}`;
+			this.lastFpsTime = timestamp;
+			this.frameCount = 0;
+		}
 	}
 };
