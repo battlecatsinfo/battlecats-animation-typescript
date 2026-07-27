@@ -22,6 +22,7 @@ const minHeight = 100;
 
 export class ExportGraphics extends FakeGraphics {
 	private drawing = false;
+	private background = false;
 	private leftBound = Infinity;
 	private rightBound = -Infinity;
 	private bottomBound = -Infinity;
@@ -98,8 +99,12 @@ export class ExportGraphics extends FakeGraphics {
 	}
 
 	override drawBG() {
-		if (this.drawing)
-			this.driver.clearWindow();
+		if (this.drawing) {
+			if (this.background)
+				this.driver.drawBG();
+			else
+				this.driver.clearWindow();
+		}
 	}
 
 	override getTransform(): FakeTransform {
@@ -146,10 +151,20 @@ export class ExportGraphics extends FakeGraphics {
 		return this.driver.getImageData();
 	}
 
-	exportImg(unit: AnimUnit, frame: number) {
+	exportImg(unit: AnimUnit, frame: number, background: string) {
 		const u = this.copyUnit(unit);
 		u.drawFrame(frame);
 		this.prepareForDraw();
+		if (background !== 'trans') {
+			if (background === 'white') {
+				const white = [255, 255, 255];
+				this.driver.setBG(white, white);
+			} else {
+				const black = [0, 0, 0];
+				this.driver.setBG(black, black);
+			}
+			this.background = true;
+		}
 		u.drawFrame(frame);
 		(this.driver.canvas as OffscreenCanvas).convertToBlob({ type: 'image/png', quality: 1 }).then(function (blob) {
 			download(blob, `frame ${toIntFast(frame)}.png`);

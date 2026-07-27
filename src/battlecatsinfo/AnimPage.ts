@@ -41,7 +41,9 @@ export class AnimPage {
 	private readonly unitIdEl: HTMLInputElement;
 	private readonly rangeEl: HTMLInputElement;
 	private readonly startPlayEl: SVGSVGElement;
-	private readonly exportImgEl: HTMLButtonElement;
+	private readonly exportImgTransEl: HTMLButtonElement;
+	private readonly exportImgBlackEl: HTMLButtonElement;
+	private readonly exportImgWhiteEl: HTMLButtonElement;
 	private readonly exportGifEl: HTMLButtonElement;
 	private readonly exportGifElTransEl: HTMLButtonElement;
 	private readonly exportMp4El: HTMLButtonElement;
@@ -129,7 +131,9 @@ export class AnimPage {
 		this.prevFrameEl = document.getElementById('prev') as HTMLButtonElement;
 		this.pauseEl = document.getElementById('pause') as HTMLButtonElement;
 		this.rangeEl = document.getElementById('range') as HTMLInputElement;
-		this.exportImgEl = document.getElementById('export-img') as HTMLButtonElement;
+		this.exportImgBlackEl = document.getElementById('export-img-black') as HTMLButtonElement;
+		this.exportImgWhiteEl = document.getElementById('export-img-white') as HTMLButtonElement;
+		this.exportImgTransEl = document.getElementById('export-img-trans') as HTMLButtonElement;
 		this.exportGifEl = document.getElementById('export-gif') as HTMLButtonElement;
 		this.exportGifElTransEl = document.getElementById('export-gif-trans') as HTMLButtonElement;
 		this.exportMp4El = document.getElementById('export-mp4') as HTMLButtonElement;
@@ -223,7 +227,9 @@ export class AnimPage {
 		});
 
 		for (const elem of [
-			this.exportImgEl,
+			this.exportImgBlackEl,
+			this.exportImgWhiteEl,
+			this.exportImgTransEl,
 			this.exportGifEl,
 			this.exportGifElTransEl,
 			this.exportMp4El,
@@ -234,10 +240,15 @@ export class AnimPage {
 
 				const target = event.currentTarget;
 
-				if (target === self.exportImgEl) {
+				if (target === self.exportImgBlackEl || target === self.exportImgWhiteEl || target === self.exportImgTransEl) {
 					const g = new ExportGraphics(self.g.constructor as any, false);
 					await g.ready;
-					g.exportImg(self.loader.forms[self.cur_form], self.frame);
+					let background = 'trans';
+					if (target === self.exportImgBlackEl)
+						background = 'black';
+					else if (target === self.exportImgWhiteEl)
+						background = 'white';
+					g.exportImg(self.loader.forms[self.cur_form], self.frame, background);
 					return;
 				}
 
