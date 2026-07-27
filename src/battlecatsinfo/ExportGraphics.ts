@@ -24,7 +24,7 @@ export class ExportGraphics extends FakeGraphics {
 	private drawing = false;
 	private leftBound = Infinity;
 	private rightBound = -Infinity;
-	private bottomBuond = -Infinity;
+	private bottomBound = -Infinity;
 	private topBound = Infinity;
 	private driver: FakeGraphics;
 	private readonly inWebWorker: boolean;
@@ -43,7 +43,7 @@ export class ExportGraphics extends FakeGraphics {
 			Number.isFinite(this.leftBound) &&
 			Number.isFinite(this.topBound) &&
 			Number.isFinite(this.rightBound) &&
-			Number.isFinite(this.bottomBuond)
+			Number.isFinite(this.bottomBound)
 		))
 			throw new Error("Fail to get animation border.");
 
@@ -51,10 +51,10 @@ export class ExportGraphics extends FakeGraphics {
 		this.leftBound = this.leftBound - padding;
 		this.rightBound = this.rightBound + padding;
 		this.topBound = this.topBound - padding;
-		this.bottomBuond = this.bottomBuond + padding;
+		this.bottomBound = this.bottomBound + padding;
 
 		let width = Math.max(Math.ceil(this.rightBound - this.leftBound), minWidth);
-		let height = Math.max(Math.ceil(this.bottomBuond - this.topBound), minHeight);
+		let height = Math.max(Math.ceil(this.bottomBound - this.topBound), minHeight);
 
 		if (width & 1)
 			++width;
@@ -75,13 +75,18 @@ export class ExportGraphics extends FakeGraphics {
 		if (!this.drawing) {
 			const p1 = new DOMPoint();
 			const p2 = new DOMPoint();
+			const p3 = new DOMPoint();
+			const p4 = new DOMPoint();
 			this.transformPoint(p1, x, y);
-			this.transformPoint(p2, x + w, y + h);
+			this.transformPoint(p2, x + w, y);
+			this.transformPoint(p3, x, y + h);
+			this.transformPoint(p4, x + w, y + h);
 
-			this.leftBound = Math.min(p1.x, p2.x, this.leftBound);
-			this.rightBound = Math.max(p1.x, p2.x, this.rightBound);
-			this.topBound = Math.min(p1.y, p2.y, this.topBound);
-			this.bottomBuond = Math.max(p2.y, p2.y, this.bottomBuond);
+			this.leftBound = Math.min(p1.x, p2.x, p3.x, p4.x, this.leftBound);
+			this.rightBound = Math.max(p1.x, p2.x, p3.x, p4.x, this.rightBound);
+			this.topBound = Math.min(p1.y, p2.y, p3.y, p4.y, this.topBound);
+			this.bottomBound = Math.max(p1.y, p2.y, p3.y, p4.y, this.bottomBound);
+
 			return;
 		}
 
