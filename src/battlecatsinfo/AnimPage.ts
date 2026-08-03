@@ -683,8 +683,8 @@ export class AnimPage {
 			case 'mp4-60':
 				blob = await g.exportMp4(this.loader.forms[options.form], onProgress, options.cmd === 'mp4-60');
 				switch (blob.type) {
-					case 'video/AV1':
-					case 'video/VP9':
+					case 'video/av1':
+					case 'video/vp9':
 						filename = 'animation.webm';
 						break;
 					default:

@@ -409,11 +409,11 @@ export class ExportGraphics extends FakeGraphics {
 
 		let type = 'video/mp4';
 		if (codec.startsWith('vp09')) {
-			type = 'video/VP9';
+			type = 'video/vp9';
 		} else if (codec.startsWith('av01')) {
-			type = 'video/AV1';
+			type = 'video/av1';
 		}
-		return new Blob([ await encoder.end() ], { type: 'video/mp4' });
+		return new Blob([ await encoder.end() ], { type });
 	}
 
 	// Encoding using mp4-muxer
