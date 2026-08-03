@@ -48,6 +48,28 @@ export class ExportGraphics extends FakeGraphics {
 		))
 			throw new Error("Fail to get animation border.");
 
+		const LIMIT = 1000;
+
+		this.leftBound = Math.max(
+		    Math.min(this.leftBound, LIMIT),
+		    -LIMIT
+		);
+
+		this.rightBound = Math.max(
+		    Math.min(this.rightBound, LIMIT),
+		    -LIMIT
+		);
+
+		this.topBound = Math.max(
+		    Math.min(this.topBound, LIMIT),
+		    -LIMIT
+		);
+
+		this.bottomBound = Math.max(
+		    Math.min(this.bottomBound, LIMIT),
+		    -LIMIT
+		);
+
 		this.drawing = true;
 		this.leftBound = this.leftBound - padding;
 		this.rightBound = this.rightBound + padding;
@@ -228,9 +250,18 @@ export class ExportGraphics extends FakeGraphics {
 
 	getPreferredCodecs(is60fps: boolean) {
 		return [
+			// H264
 			is60fps ? 'avc1.4D4032' : 'avc1.4D4028', // Main Profile Level 4.0 / 4.2
 			is60fps ? 'avc1.4D4034' : 'avc1.4D4033', // Main Profile Level 5.1 / 5.2
 			is60fps ? 'avc1.640034' : 'avc1.640033', // High Profile Level 5.1 / 5.2
+
+			// AV1
+			'av01.0.10M.08',
+			'av01.0.12M.08',
+			'av01.0.08M.08',
+
+			// VP9
+			'vp09.00.10.08', // baseline
 		];
 	}
 
@@ -351,8 +382,10 @@ export class ExportGraphics extends FakeGraphics {
 			}
 		}
 
-		if (!codec)
+		if (!codec) {
+			console.log(config);
 			throw "No supported codec found for VideoEncoder!";
+		}
 
 		const MP4 = await loadMP4Module();
 		const encoder = MP4.createWebCodecsEncoder({
@@ -374,6 +407,12 @@ export class ExportGraphics extends FakeGraphics {
 			onProgress((f + 1) / length);
 		}
 
+		let type = 'video/mp4';
+		if (codec.startsWith('vp09')) {
+			type = 'video/VP9';
+		} else if (codec.startsWith('av01')) {
+			type = 'video/AV1';
+		}
 		return new Blob([ await encoder.end() ], { type: 'video/mp4' });
 	}
 
