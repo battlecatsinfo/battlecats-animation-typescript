@@ -41,6 +41,7 @@ export class AnimPage {
 	private readonly unitIdEl: HTMLInputElement;
 	private readonly rangeEl: HTMLInputElement;
 	private readonly startPlayEl: SVGSVGElement;
+	private readonly exportImgEl: HTMLButtonElement;
 	private readonly exportImgTransEl: HTMLButtonElement;
 	private readonly exportImgBlackEl: HTMLButtonElement;
 	private readonly exportImgWhiteEl: HTMLButtonElement;
@@ -131,6 +132,7 @@ export class AnimPage {
 		this.prevFrameEl = document.getElementById('prev') as HTMLButtonElement;
 		this.pauseEl = document.getElementById('pause') as HTMLButtonElement;
 		this.rangeEl = document.getElementById('range') as HTMLInputElement;
+		this.exportImgEl = document.getElementById('export-img') as HTMLButtonElement;
 		this.exportImgBlackEl = document.getElementById('export-img-black') as HTMLButtonElement;
 		this.exportImgWhiteEl = document.getElementById('export-img-white') as HTMLButtonElement;
 		this.exportImgTransEl = document.getElementById('export-img-trans') as HTMLButtonElement;
@@ -227,6 +229,7 @@ export class AnimPage {
 		});
 
 		for (const elem of [
+			this.exportImgEl,
 			this.exportImgBlackEl,
 			this.exportImgWhiteEl,
 			this.exportImgTransEl,
@@ -240,15 +243,21 @@ export class AnimPage {
 
 				const target = event.currentTarget;
 
-				if (target === self.exportImgBlackEl || target === self.exportImgWhiteEl || target === self.exportImgTransEl) {
+				if (target === self.exportImgEl ||
+					target === self.exportImgBlackEl || 
+					target === self.exportImgWhiteEl || 
+					target === self.exportImgTransEl
+				) {
 					const g = new ExportGraphics(self.g.constructor as any, false);
 					await g.ready;
 					let background = 'trans';
-					if (target === self.exportImgBlackEl)
+					if (target === self.exportImgEl)
+						background = 'original';
+					else if (target === self.exportImgBlackEl)
 						background = 'black';
 					else if (target === self.exportImgWhiteEl)
 						background = 'white';
-					g.exportImg(self.loader.forms[self.cur_form], self.frame, background);
+					g.exportImg(self.loader.forms[self.cur_form], self.frame, background, self.color1El.value, self.color2El.value);
 					return;
 				}
 

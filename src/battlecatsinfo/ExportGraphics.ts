@@ -7,7 +7,7 @@ import { GLImage } from "../webgl/GLImage";
 import { GLGraphics } from "../webgl/GLGraphics";
 import { GPUImage } from "../webgpu/GPUImage";
 import { WebGPUGraphics } from "../webgpu/WebGPUGraphics";
-import { toIntFast } from "../util/util";
+import { parseHexColor, toIntFast } from "../util/util";
 import { download } from "../util/download";
 import { checkOffscreenCanvas } from "./OffscreenCanvas";
 
@@ -173,7 +173,7 @@ export class ExportGraphics extends FakeGraphics {
 		return this.driver.getImageData();
 	}
 
-	exportImg(unit: AnimUnit, frame: number, background: string) {
+	exportImg(unit: AnimUnit, frame: number, background: string, c1: string, c2: string) {
 		const u = this.copyUnit(unit);
 		u.drawFrame(frame);
 		this.prepareForDraw();
@@ -181,9 +181,11 @@ export class ExportGraphics extends FakeGraphics {
 			if (background === 'white') {
 				const white = [255, 255, 255];
 				this.driver.setBG(white, white);
-			} else {
+			} else if (background === 'black') {
 				const black = [0, 0, 0];
 				this.driver.setBG(black, black);
+			} else {
+				this.driver.setBG(parseHexColor(c1), parseHexColor(c2));
 			}
 			this.background = true;
 		}
